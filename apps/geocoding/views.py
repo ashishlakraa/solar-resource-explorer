@@ -1,3 +1,4 @@
+import logging
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -6,9 +7,10 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 
 from .serializers import GeocodedLocationSerializer
-from .services import geocode_payload
+from .services import geocode_address
 
-import requests
+
+logger = logging.getLogger(__name__)
 
 class GeocodingViewSet(ViewSet):
     """ViewSet for geocoding operations."""
@@ -31,8 +33,10 @@ class GeocodingViewSet(ViewSet):
     def geocode(self, request):
         """Geocode given address string."""
 
+        logger.info(f"Received geocoding request with query params: {request.query_params}")
+
         address = request.query_params.get("address", "").strip()
-        
+        logger.debug(f"Attempting to geocode address: {address}")
         if not address:
             return Response(
                 {
@@ -41,6 +45,24 @@ class GeocodingViewSet(ViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        result = geocode_payload(address)
-        serializer = GeocodedLocationSerializer(result)
-        return Response(serializer.data)
+        result, status_code = geocode_address(address)
+
+        if status_code != status.HTTP_200_OK:
+
+            if status_code == status.HTTP_404_NOT_FOUND:
+                return Response(
+                    {
+                        "detail": f"Address '{address}' not found"
+                    },
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            else:
+                return Response(
+                    {
+                        "detail": f"Some error occurred while geocoding address '{address}'"
+                    },
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+        else:
+            serializer = GeocodedLocationSerializer(result)
+            return Response(serializer.data)

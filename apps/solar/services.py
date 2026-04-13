@@ -1,10 +1,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import logging
+import requests
+from rest_framework import status
 
+from config.config import NREL_SOLAR_RESOURCE_URL, NREL_API_KEY
+
+logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
-class IrradianceReading:
+class SolarResourceReading:
     latitude: float
     longitude: float
     annual_ghi_kwh_m2: float | None = None
@@ -12,9 +18,27 @@ class IrradianceReading:
     annual_dhi_kwh_m2: float | None = None
 
 
-def fetch_irradiance(latitude: float, longitude: float) -> IrradianceReading:
+def fetch_irradiance(latitude: float, longitude: float) -> SolarResourceReading:
     """Placeholder solar resource lookup for future NREL integration."""
-    return IrradianceReading(latitude=latitude, longitude=longitude)
+
+    api_url = f"{NREL_SOLAR_RESOURCE_URL}"
+
+    payload = {
+        "lat": latitude,
+        "lon": longitude,
+        "api_key": f"{NREL_API_KEY}",
+        "format": "json"
+    }
+
+    try:
+        response = requests.get(api_url, params=payload)
+        response.raise_for_status()
+        data = response.json()
+    except requests.RequestException as e:
+        logger.error(f"Error occurred while fetching solar resource data for lat: {latitude}, lon: {longitude} due to: {e}")
+        return None, status.HTTP_500_INTERNAL_SERVER_ERROR
+
+
 
 
 def calculate_pvwatts(

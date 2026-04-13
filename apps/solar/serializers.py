@@ -1,9 +1,9 @@
 from rest_framework import serializers
 
-from .services import IrradianceReading
+from .services import SolarResourceReading
 
 
-class IrradianceReadingSerializer(serializers.Serializer):
+class SolarResourceReadingSerializer(serializers.Serializer):
     latitude = serializers.FloatField()
     longitude = serializers.FloatField()
     annual_ghi_kwh_m2 = serializers.FloatField(allow_null=True)
@@ -11,7 +11,7 @@ class IrradianceReadingSerializer(serializers.Serializer):
     annual_dhi_kwh_m2 = serializers.FloatField(allow_null=True)
 
     def create(self, validated_data):
-        return IrradianceReading(**validated_data)
+        return SolarResourceReading(**validated_data)
 
 
 class PVWattsCalculationSerializer(serializers.Serializer):
@@ -24,5 +24,5 @@ class PVWattsCalculationSerializer(serializers.Serializer):
 
 
 class SolarSiteSerializer(serializers.Serializer):
-    site_id = serializers.IntegerField()
-    detail = serializers.CharField()
+    site_latitude = serializers.FloatField()
+    site_longitude = serializers.FloatField()

@@ -1,7 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
-
+from rest_framework import status
 
 import logging
 import requests
@@ -23,7 +23,7 @@ class GeocodedLocation:
 def geocode_address(address: str) -> GeocodedLocation:
     """Geocode an address string using the configured geocoding service."""
     
-    api_url = f"{GEOCODING_SERVICE_URL}/search"
+    api_url = f"{GEOCODING_SERVICE_URL}"
     
     payload = {
         "q": address,
@@ -40,9 +40,9 @@ def geocode_address(address: str) -> GeocodedLocation:
         data = response.json()
     except requests.RequestException as e:
         logger.error(f"Error occurred while geocoding address '{address}' due to: {e}")
-        return GeocodedLocation(address=address, latitude=None, longitude=None)
-
-    if data:
+        return None, status.HTTP_500_INTERNAL_SERVER_ERROR
+        
+    if data and isinstance(data, list) and len(data) > 0:
         location_data = data[0]
         logger.debug(f"Successfully geocoded address '{address}' to lat: {location_data['lat']}, lon: {location_data['lon']} using {GEOCODING_SERVICE_URL}")
         return GeocodedLocation(
@@ -50,16 +50,8 @@ def geocode_address(address: str) -> GeocodedLocation:
             latitude=float(location_data["lat"]),
             longitude=float(location_data["lon"]),
             source=GEOCODING_SERVICE_URL.split("//")[-1].split("/")[0]  # Extract domain as source
-        )
+        ), status.HTTP_200_OK
+    else:
+        logger.warning(f"No geocoding results found for address '{address}' using {GEOCODING_SERVICE_URL}")
+        return None, status.HTTP_404_NOT_FOUND
 
-    return GeocodedLocation(address=address, latitude=None, longitude=None)
-
-
-def geocode_payload(address: str) -> dict[str, Any]:
-    location = geocode_address(address)
-    return {
-        "address": location.address,
-        "latitude": location.latitude,
-        "longitude": location.longitude,
-        "source": location.source,
-    }
