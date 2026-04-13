@@ -6,9 +6,12 @@ from .services import SolarResourceReading
 class SolarResourceReadingSerializer(serializers.Serializer):
     latitude = serializers.FloatField()
     longitude = serializers.FloatField()
-    annual_ghi_kwh_m2 = serializers.FloatField(allow_null=True)
-    annual_dni_kwh_m2 = serializers.FloatField(allow_null=True)
-    annual_dhi_kwh_m2 = serializers.FloatField(allow_null=True)
+    annual_avg_dni = serializers.FloatField(allow_null=True)
+    annual_avg_ghi = serializers.FloatField(allow_null=True)
+    annual_avg_lat_tilt = serializers.FloatField(allow_null=True)
+    monthly_avg_dni = serializers.DictField(allow_null=True)
+    monthly_avg_ghi = serializers.DictField(allow_null=True)
+    monthly_avg_lat_tilt = serializers.DictField(allow_null=True)
 
     def create(self, validated_data):
         return SolarResourceReading(**validated_data)
@@ -22,7 +25,3 @@ class PVWattsCalculationSerializer(serializers.Serializer):
     irradiance_kwh_m2_day = serializers.FloatField(default=4)
     estimated_daily_kwh = serializers.FloatField(read_only=True)
 
-
-class SolarSiteSerializer(serializers.Serializer):
-    site_latitude = serializers.FloatField()
-    site_longitude = serializers.FloatField()

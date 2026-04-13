@@ -65,4 +65,4 @@ class GeocodingViewSet(ViewSet):
                 )
         else:
             serializer = GeocodedLocationSerializer(result)
-            return Response(serializer.data)
+            return Response(serializer.data, status=status.HTTP_200_OK)
