@@ -5,9 +5,10 @@ from .views import SolarSiteViewSet
 
 app_name = "solar"
 
-router = DefaultRouter()
+router = DefaultRouter(trailing_slash=False)
 router.register(r"solar", SolarSiteViewSet, basename="solar-site")
 
 urlpatterns = [
     path("", include(router.urls)),
 ]
+

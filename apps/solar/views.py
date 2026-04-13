@@ -2,6 +2,8 @@ from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
 
 from .serializers import PVWattsCalculationSerializer, SolarSiteSerializer
 from .services import calculate_pvwatts, fetch_irradiance
@@ -9,9 +11,23 @@ from .services import calculate_pvwatts, fetch_irradiance
 
 class SolarSiteViewSet(ViewSet):
     """ViewSet for solar site operations."""
+    
+    serializer_class = SolarSiteSerializer
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="latitude",
+                location=OpenApiParameter.PATH,
+                description="The ID of the solar site",
+                required=True,
+                type=OpenApiTypes.INT,
+            )
+        ],
+        responses={200: SolarSiteSerializer}
+    )
     @action(detail=True, methods=["get"], url_path="detail")
-    def site_detail(self, request, pk=None):
+    def site_detail(self, request, pk: int = None):
         """Get solar site details."""
         return Response(
             SolarSiteSerializer(
@@ -19,8 +35,48 @@ class SolarSiteViewSet(ViewSet):
             ).data
         )
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="id",
+                location=OpenApiParameter.PATH,
+                description="The ID of the solar site",
+                required=True,
+                type=OpenApiTypes.INT,
+            ),
+            OpenApiParameter(
+                name="latitude",
+                location=OpenApiParameter.QUERY,
+                description="Latitude of the solar site",
+                required=False,
+                type=OpenApiTypes.FLOAT,
+            ),
+            OpenApiParameter(
+                name="longitude",
+                location=OpenApiParameter.QUERY,
+                description="Longitude of the solar site",
+                required=False,
+                type=OpenApiTypes.FLOAT,
+            ),
+            OpenApiParameter(
+                name="system_size_kw",
+                location=OpenApiParameter.QUERY,
+                description="System size in kilowatts",
+                required=False,
+                type=OpenApiTypes.FLOAT,
+            ),
+            OpenApiParameter(
+                name="irradiance_kwh_m2_day",
+                location=OpenApiParameter.QUERY,
+                description="Irradiance in kWh/m2/day",
+                required=False,
+                type=OpenApiTypes.FLOAT,
+            ),
+        ],
+        responses={200: PVWattsCalculationSerializer}
+    )
     @action(detail=True, methods=["get"], url_path="pvwatts")
-    def pvwatts(self, request, pk=None):
+    def pvwatts(self, request, pk: int = None):
         """Calculate PVWatts production estimate for a solar site."""
         latitude = request.query_params.get("latitude")
         longitude = request.query_params.get("longitude")

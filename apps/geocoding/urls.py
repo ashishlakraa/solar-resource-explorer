@@ -5,8 +5,8 @@ from .views import GeocodingViewSet
 
 app_name = "geocoding"
 
-router = DefaultRouter()
-router.register(r"", GeocodingViewSet, basename="geocoding")
+router = DefaultRouter(trailing_slash=False)
+router.register(r"geocode", GeocodingViewSet, basename="geocoding")
 
 urlpatterns = [
     path("", include(router.urls)),
