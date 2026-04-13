@@ -1,0 +1,12 @@
+
+Geocoding
+Nominatim - https://nominatim.org/
+https://nominatim.org/release-docs/latest/api/Search/
+
+
+NREL's solar resource
+api_key: rZyabFZmpo1Rcv3jHGPvW90ne9yBj5YhgqanDsUa
+https://developer.nlr.gov/docs/solar/
+
+
+
