@@ -7,7 +7,7 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 
 from .serializers import PVWattsCalculationSerializer, SolarResourceReadingSerializer
-from .services import fetch_solar_resource_data
+from .services import fetch_solar_resource_data, fetch_pvwatts_calculation
 
 
 logger = logging.getLogger(__name__)
@@ -37,7 +37,7 @@ class SolarSiteViewSet(ViewSet):
         responses={200: SolarResourceReadingSerializer}
     )
     @action(detail=False, methods=["get"], url_path="detail")
-    def site_detail(self, request):
+    def solar_resource_data(self, request):
         """Get solar resource details."""
         
         logger.info(f"Received solar site detail request with query params: {request.query_params}")
@@ -46,6 +46,7 @@ class SolarSiteViewSet(ViewSet):
         longitude = request.query_params.get("longitude")
 
         if latitude is None or longitude is None:
+            logger.error(f"Missing required query parameters for solar resource data: latitude={latitude}, longitude={longitude}")
             return Response(
                 {
                     "detail": "Query parameters 'latitude' and 'longitude' are required."
@@ -56,6 +57,7 @@ class SolarSiteViewSet(ViewSet):
         result, status_code = fetch_solar_resource_data(float(latitude), float(longitude))
 
         if status_code != status.HTTP_200_OK:
+            logger.error(f"Error fetching solar resource data for lat: {latitude}, lon: {longitude} with status code: {status_code}")
             return Response(
                 {
                     "detail": f"Error fetching solar resource data for lat: {latitude}, lon: {longitude}"
@@ -63,8 +65,25 @@ class SolarSiteViewSet(ViewSet):
                 status=status_code,
             )
         else:
+            logger.info(f"Successfully fetched solar resource data for lat: {latitude}, lon: {longitude}")
             serializer = SolarResourceReadingSerializer(result)
             return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=["get"], url_path="pvwatts-metadata")
+    def pvwatts_metadata(self, request):
+        """Get PVWatts calculator fields descriptions."""
+        serializer = PVWattsCalculationSerializer()
+        metadata = {}
+        
+        for field_name, field in serializer.fields.items():
+            metadata[field_name] = {
+                "help_text": field.help_text or "",
+                "required": field.required,
+                "read_only": field.read_only,
+            }
+        
+        return Response(metadata, status=status.HTTP_200_OK)
+
 
     @extend_schema(
         parameters=[
@@ -172,39 +191,121 @@ class SolarSiteViewSet(ViewSet):
             OpenApiParameter(
                 name="soiling",
                 location=OpenApiParameter.QUERY,
-                description="Monthly soiling losses as pipe-delimited array (12 values, Range: 0 - 100)",
+                description="Monthly irradiance loss (%) as comma-separated array (12 values, Range: 0 - 100)",
                 required=False,
                 type=OpenApiTypes.STR,
             ),
         ],
         responses={200: PVWattsCalculationSerializer}
     )
-    @action(detail=True, methods=["get"], url_path="pvwatts")
+    @action(detail=False, methods=["get"], url_path="pvwatts")
     def pvwatts(self, request, pk: int = None):
         """Calculate PVWatts production estimate for a solar site."""
-        latitude = request.query_params.get("latitude")
-        longitude = request.query_params.get("longitude")
-        system_size_kw = float(request.query_params.get("system_size_kw", 1))
-        irradiance_kwh_m2_day = float(
-            request.query_params.get("irradiance_kwh_m2_day", 4)
+        
+        logger.info(f"Received PVWatts calculation request with query params: {request.query_params}")
+
+        # Extract required parameters
+        lat = request.query_params.get("lat")
+        lon = request.query_params.get("lon")
+        system_capacity = request.query_params.get("system_capacity")
+        module_type = request.query_params.get("module_type")
+        losses = request.query_params.get("losses")
+        array_type = request.query_params.get("array_type")
+        tilt = request.query_params.get("tilt")
+        azimuth = request.query_params.get("azimuth")
+
+        # Validate required parameters
+        if any(param is None for param in [lat, lon, system_capacity, module_type, losses, array_type, tilt, azimuth]):
+            logger.error(f"Missing required query parameters for PVWatts calculation: lat={lat}, lon={lon}, system_capacity={system_capacity}, module_type={module_type}, losses={losses}, array_type={array_type}, tilt={tilt}, azimuth={azimuth}")
+            return Response(
+                {
+                    "detail": "Query parameters 'lat', 'lon', 'system_capacity', 'module_type', 'losses', 'array_type', 'tilt', and 'azimuth' are required."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Extract optional parameters
+        dc_ac_ratio = request.query_params.get("dc_ac_ratio")
+        inv_eff = request.query_params.get("inv_eff")
+        gcr = request.query_params.get("gcr")
+        albedo = request.query_params.get("albedo")
+        bifaciality = request.query_params.get("bifaciality")
+        soiling = request.query_params.get("soiling")
+
+        # Convert to appropriate types
+        try:
+            lat = float(lat)
+            lon = float(lon)
+            system_capacity = float(system_capacity)
+            module_type = int(module_type)
+            losses = float(losses)
+            array_type = int(array_type)
+            tilt = float(tilt)
+            azimuth = float(azimuth)
+            
+            # Convert optional parameters if provided
+            dc_ac_ratio = float(dc_ac_ratio) if dc_ac_ratio is not None else None
+            inv_eff = float(inv_eff) if inv_eff is not None else None
+            gcr = float(gcr) if gcr is not None else None
+            albedo = float(albedo) if albedo is not None else None
+            bifaciality = float(bifaciality) if bifaciality is not None else None
+            
+            # Convert soiling from comma-separated string to list of floats
+            if soiling is not None:
+                try:
+                    soiling = [float(val.strip()) for val in soiling.split(",")]
+                    
+                    # Validate if soiling list has exactly 12 values
+                    if len(soiling) != 12:
+                        return Response(
+                            {
+                                "detail": f"Soiling parameter must contain exactly 12 values (one per month), received {len(soiling)}"
+                            },
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                except (ValueError, TypeError) as e:
+                    logger.error(f"Error converting soiling values: {str(e)}")
+                    return Response(
+                        {
+                            "detail": f"Invalid soiling values: {str(e)}. Expected comma-separated list of 12 floats."
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+        except (ValueError, TypeError) as e:
+            logger.error(f"Error converting parameter values: {str(e)}")
+            return Response(
+                {
+                    "detail": f"Invalid parameter type: {str(e)}"
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        result, response_status = fetch_pvwatts_calculation(
+            lat=lat,
+            lon=lon,
+            system_capacity=system_capacity,
+            module_type=module_type,
+            losses=losses,
+            array_type=array_type,
+            tilt=tilt,
+            azimuth=azimuth,
+            dc_ac_ratio=dc_ac_ratio,
+            inv_eff=inv_eff,
+            gcr=gcr,
+            albedo=albedo,
+            bifaciality=bifaciality,
+            soiling=soiling,
         )
 
-        if latitude is not None and longitude is not None:
-            fetch_irradiance(float(latitude), float(longitude))
-
-        try:
-            estimated_daily_kwh = calculate_pvwatts(
-                system_size_kw, irradiance_kwh_m2_day
-            )
-        except ValueError as e:
+        if response_status != status.HTTP_200_OK:
+            logger.error(f"Error fetching PVWatts calculation for lat: {lat}, lon: {lon} with status code: {response_status}")
             return Response(
-                {"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST
+                {
+                    "detail": f"Error fetching PVWatts calculation for lat: {lat}, lon: {lon}"
+                },
+                status=response_status,
             )
-
-        result = {
-            "site_id": pk,
-            "system_size_kw": system_size_kw,
-            "irradiance_kwh_m2_day": irradiance_kwh_m2_day,
-            "estimated_daily_kwh": estimated_daily_kwh,
-        }
-        return Response(PVWattsCalculationSerializer(result).data)
+        else:
+            logger.info(f"Successfully fetched PVWatts calculation for lat: {lat}, lon: {lon} with system_capacity: {system_capacity}, module_type: {module_type}, losses: {losses}, array_type: {array_type}, tilt: {tilt}, azimuth: {azimuth}")
+            serializer = PVWattsCalculationSerializer(result)
+            return Response(serializer.data, status=status.HTTP_200_OK)

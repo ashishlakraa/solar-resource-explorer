@@ -1,0 +1,1887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar Resource Data - {{ site.address }}</title>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            gap: 20px;
+        }
+
+        .header-title {
+            flex: 1;
+        }
+
+        .header-title h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 15px;
+            word-break: break-word;
+        }
+
+        .site-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .info-item {
+            background-color: #f9f9f9;
+            padding: 12px;
+            border-radius: 4px;
+            border-left: 4px solid #FF9800;
+        }
+
+        .info-label {
+            font-weight: bold;
+            color: #555;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            color: #333;
+            font-size: 16px;
+            font-family: monospace;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background-color: #FF9800;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #F57C00;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+
+        .content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .content-section {
+            margin-bottom: 30px;
+        }
+
+        .content-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-section {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 4px;
+            margin-top: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-group-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            color: #333;
+            font-size: 14px;
+            margin: 0;
+        }
+
+        .info-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            background-color: #e0e0e0;
+            color: #666;
+            border-radius: 50%;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: help;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .info-icon:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: normal;
+            white-space: nowrap;
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        .info-icon:hover::before {
+            content: '';
+            position: absolute;
+            bottom: 118%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 5px solid transparent;
+            border-top-color: #333;
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #FF9800;
+            box-shadow: 0 0 5px rgba(255, 152, 0, 0.3);
+        }
+
+        .form-group-description {
+            font-size: 12px;
+            color: #666;
+            margin-top: 6px;
+            display: none;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-bottom: 15px;
+        }
+
+        .form-row .form-group {
+            margin-bottom: 0;
+        }
+
+        .required-fields-note {
+            background-color: #fff3e0;
+            border-left: 4px solid #FF9800;
+            padding: 12px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #333;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #FF9800;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .section-header .section-title {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+            flex: 1;
+        }
+
+        .section-header-border {
+            border-bottom: 2px solid #FF9800;
+            padding-bottom: 10px;
+        }
+
+        .placeholder {
+            background-color: #f0f0f0;
+            padding: 40px;
+            border-radius: 4px;
+            text-align: center;
+            color: #888;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #FF9800;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .solar-data-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .solar-data-item {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 4px;
+            border-left: 4px solid #FF9800;
+        }
+
+        .solar-data-label {
+            font-weight: bold;
+            color: #555;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .solar-data-value {
+            font-size: 20px;
+            color: #FF9800;
+            font-weight: bold;
+            font-family: monospace;
+            word-break: break-word;
+        }
+
+        .solar-data-unit {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        .error-message {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 0;
+        }
+
+        .solar-monthly-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .solar-monthly-table thead {
+            background-color: #f5f5f5;
+            border-bottom: 2px solid #FF9800;
+        }
+
+        .solar-monthly-table th {
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            color: #1976D2;
+            font-size: 16px;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .solar-monthly-table th:first-child {
+            text-align: left;
+        }
+
+        .solar-monthly-table tbody tr {
+            border-bottom: 1px solid #ddd;
+        }
+
+        .solar-monthly-table tbody tr:nth-child(odd) {
+            background-color: #f9f9f9;
+        }
+
+        .solar-monthly-table tbody tr:nth-child(even) {
+            background-color: #fff;
+        }
+
+        .solar-monthly-table td {
+            padding: 12px 15px;
+            text-align: center;
+            font-size: 15px;
+        }
+
+        .solar-monthly-table td:first-child {
+            text-align: left;
+            color: #1976D2;
+            font-weight: bold;
+        }
+
+        .solar-monthly-table tbody tr:last-child {
+            background-color: #fff3e0;
+            font-weight: bold;
+            border-top: 2px solid #FF9800;
+        }
+
+        .solar-monthly-table tbody tr:last-child td {
+            color: #FF9800;
+            font-size: 16px;
+        }
+
+        .solar-monthly-table tbody tr:last-child td:first-child {
+            color: #FF9800;
+        }
+
+        .pvwatts-header-nav {
+            display: none !important;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .pvwatts-header-nav.show {
+            display: flex !important;
+        }
+
+        .pvwatts-nav-arrow {
+            cursor: pointer;
+            color: #FF9800;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        .pvwatts-nav-arrow:hover {
+            opacity: 0.7;
+        }
+
+        .pvwatts-tab-content {
+            display: none;
+        }
+
+        .pvwatts-tab-content.active {
+            display: block;
+        }
+
+        .pvwatts-loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .pvwatts-loading.show {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .pvwatts-loading-message {
+            font-size: 16px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .pvwatts-results-section {
+            display: none;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .pvwatts-results-section.show {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .pvwatts-results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .pvwatts-results-table thead {
+            background-color: #f5f5f5;
+            border-bottom: 2px solid #FF9800;
+        }
+
+        .pvwatts-results-table th {
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            color: #1976D2;
+            font-size: 16px;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .pvwatts-results-table th:first-child {
+            text-align: left;
+        }
+
+        .pvwatts-results-table tbody tr {
+            border-bottom: 1px solid #ddd;
+        }
+
+        .pvwatts-results-table tbody tr:nth-child(odd) {
+            background-color: #f9f9f9;
+        }
+
+        .pvwatts-results-table tbody tr:nth-child(even) {
+            background-color: #fff;
+        }
+
+        .pvwatts-results-table td {
+            padding: 12px 15px;
+            text-align: center;
+            font-size: 15px;
+        }
+
+        .pvwatts-results-table td:first-child {
+            text-align: left;
+            color: #1976D2;
+            font-weight: bold;
+        }
+
+        .pvwatts-results-table td.numeric {
+            text-align: center;
+        }
+
+        .pvwatts-results-table tbody tr:last-child {
+            background-color: #fff3e0;
+            font-weight: bold;
+            border-top: 2px solid #FF9800;
+        }
+
+        .pvwatts-results-table tbody tr:last-child td {
+            color: #FF9800;
+            font-size: 16px;
+        }
+
+        .pvwatts-results-table tbody tr:last-child td:first-child {
+            color: #FF9800;
+        }
+
+        #stationInfoTable {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            background-color: white;
+        }
+
+        #stationInfoTable tbody tr {
+            border-bottom: 1px solid #ddd;
+        }
+
+        #stationInfoTable tbody tr:nth-child(odd) {
+            background-color: #f9f9f9;
+        }
+
+        #stationInfoTable tbody tr:nth-child(even) {
+            background-color: #fff;
+        }
+
+        #stationInfoTable td {
+            padding: 12px 15px;
+            font-size: 15px;
+        }
+
+        #stationInfoTable td:first-child {
+            font-weight: bold;
+            width: 40%;
+            color: #333;
+        }
+
+        #stationInfoTable td:last-child {
+            text-align: left;
+            color: #333;
+        }
+
+        #performanceMetricsTable {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            background-color: white;
+        }
+
+        #performanceMetricsTable tbody tr {
+            border-bottom: 1px solid #ddd;
+        }
+
+        #performanceMetricsTable tbody tr:nth-child(odd) {
+            background-color: #f9f9f9;
+        }
+
+        #performanceMetricsTable tbody tr:nth-child(even) {
+            background-color: #fff;
+        }
+
+        #performanceMetricsTable td {
+            padding: 12px 15px;
+            font-size: 15px;
+        }
+
+        #performanceMetricsTable td:first-child {
+            font-weight: bold;
+            width: 40%;
+            color: #333;
+        }
+
+        #performanceMetricsTable td:last-child {
+            text-align: left;
+            color: #333;
+        }
+
+        .pvwatts-nav-link {
+            cursor: pointer;
+            color: #FF9800;
+            text-decoration: none;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .pvwatts-nav-link:hover {
+            text-decoration: underline;
+            opacity: 0.8;
+        }
+
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .data-card {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 4px;
+            border-top: 4px solid #FF9800;
+        }
+
+        .data-card-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .data-card-value {
+            font-size: 18px;
+            color: #FF9800;
+            font-weight: bold;
+            font-family: monospace;
+        }
+
+        .data-card-unit {
+            font-size: 12px;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        .back-link {
+            color: #FF9800;
+            text-decoration: none;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 20px;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .map-container {
+            width: 100%;
+            height: 300px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Table of Contents Menu */
+        .toc-menu {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 999;
+            max-height: 90vh;
+            overflow-y: auto;
+            font-size: 14px;
+        }
+
+        .toc-header {
+            color: #1976D2;
+            font-weight: bold;
+            white-space: nowrap;
+            margin-bottom: 8px;
+        }
+
+        .toc-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .toc-list li {
+            margin: 0;
+            padding: 0;
+        }
+
+        .toc-list a {
+            display: block;
+            padding: 4px 0;
+            color: #333;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .toc-list a:hover {
+            color: #FF9800;
+        }
+
+        .toc-list a.active {
+            color: #FF9800;
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+            }
+
+            .site-info {
+                grid-template-columns: 1fr;
+            }
+
+            .section-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            .container {
+                padding: 10px;
+            }
+
+            .header,
+            .content {
+                padding: 20px;
+            }
+
+            .toc-menu {
+                position: fixed;
+                top: 10px;
+                left: 10px;
+                font-size: 13px;
+            }
+
+            .toc-list a {
+                padding: 3px 0;
+            }
+
+            .toc-header {
+                margin-bottom: 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Table of Contents Menu -->
+    <nav class="toc-menu" id="tocMenu">
+        <div class="toc-header">Jump to →</div>
+        <ul class="toc-list" id="tocList">
+            <li><a href="#solarResourceSection" class="toc-link">Solar Resource Data</a></li>
+            <li><a href="#pvwattsSection" class="toc-link">PVWatts Calculator</a></li>
+            <li><a href="#locationMapSection" class="toc-link">Location Map</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+
+        <!-- Site Details -->
+        <div class="header">
+            <div class="header-content">
+                <div class="header-title">
+                    <h1>{{ site.address }}</h1>
+                    <div class="site-info">
+                        <div class="info-item">
+                            <div class="info-label">Latitude</div>
+                            <div class="info-value">{{ site.latitude|floatformat:4 }}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Longitude</div>
+                            <div class="info-value">{{ site.longitude|floatformat:4 }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        
+        <div class="content">
+            <!-- Solar Resource Data section -->
+            <div class="content-section" id="solarResourceSection">
+                <h2 class="section-title">Solar Resource Data</h2>
+                <div id="solarResourceContainer" class="placeholder">
+                    <div class="loading-spinner"></div>
+                    <p style="margin-top: 10px;">Loading solar resource data...</p>
+                </div>
+            </div>
+
+            <!-- PVWatts Calculation section -->
+            <div class="content-section" id="pvwattsSection">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 class="section-title" style="margin-bottom: 0; padding-bottom: 0; border-bottom: none;">PVWatts Calculator</h2>
+                    <div class="pvwatts-header-nav" id="pvwattsResultsNav">
+                        <a onclick="switchTab('form')" class="pvwatts-nav-arrow">← Back to Calculator</a>
+                        <a onclick="resetForm()" class="pvwatts-nav-arrow">New Calculation →</a>
+                    </div>
+                    <div class="pvwatts-header-nav" id="pvwattsFormNav">
+                        <a onclick="switchTab('results')" class="pvwatts-nav-arrow">Go to PVWatts Results →</a>
+                    </div>
+                </div>
+                <div style="border-bottom: 2px solid #FF9800; margin-bottom: 20px;"></div>
+
+                <!-- PVWatts Form Tab -->
+                <div class="pvwatts-tab-content active" id="formTab">
+                    <div class="required-fields-note">
+                        <strong>Required Fields:</strong> All fields marked with * are required for the calculation
+                    </div>
+                    <form id="pvwattsForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <div class="form-group-header">
+                                <label for="pvLat">Latitude (°) *</label>
+                                <div class="info-icon">i</div>
+                            </div>
+                            <input type="number" id="pvLat" name="lat" step="0.0001" min="-90" max="90" readonly placeholder="{{ site.latitude }}" value="{{ site.latitude }}" required>
+                        </div>
+                        <div class="form-group">
+                            <div class="form-group-header">
+                                <label for="pvLon">Longitude (°) *</label>
+                                <div class="info-icon">i</div>
+                            </div>
+                            <input type="number" id="pvLon" name="lon" step="0.0001" min="-180" max="180" readonly placeholder="{{ site.longitude }}" value="{{ site.longitude }}" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <div class="form-group-header">
+                                <label for="systemCapacity">System Capacity (kW) *</label>
+                                <div class="info-icon">i</div>
+                            </div>
+                            <input type="number" id="systemCapacity" name="system_capacity" min="0.05" max="500000" step="0.01" placeholder="e.g., 10" value="4" required>
+                        </div>
+                        <div class="form-group">
+                            <div class="form-group-header">
+                                <label for="moduleType">Module Type *</label>
+                                <div class="info-icon">i</div>
+                            </div>
+                            <select id="moduleType" name="module_type" required>
+                                <option value="">-- Select Module Type --</option>
+                                <option value="0" selected>Standard</option>
+                                <option value="1">Premium</option>
+                                <option value="2">Thin film</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <div class="form-group-header">
+                                <label for="losses">System Losses (%) *</label>
+                                <div class="info-icon">i</div>
+                            </div>
+                            <input type="number" id="losses" name="losses" min="-5" max="99" step="0.1" placeholder="e.g., 14" value="14" required>
+                        </div>
+                        <div class="form-group">
+                            <div class="form-group-header">
+                                <label for="arrayType">Array Type *</label>
+                                <div class="info-icon">i</div>
+                            </div>
+                            <select id="arrayType" name="array_type" required>
+                                <option value="">-- Select Array Type --</option>
+                                <option value="0">Fixed - Open Rack</option>
+                                <option value="1" selected>Fixed - Roof Mounted</option>
+                                <option value="2">Fixed - 1-Axis</option>
+                                <option value="3">Fixed - 1-Axis Backtracking</option>
+                                <option value="4">Fixed - 2-Axis</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <div class="form-group-header">
+                                <label for="tilt">Tilt Angle (in deg) *</label>
+                                <div class="info-icon">i</div>
+                            </div>
+                            <input type="number" id="tilt" name="tilt" min="0" max="90" step="0.1" placeholder="e.g., 20" value="10" required>
+                        </div>
+                        <div class="form-group">
+                            <div class="form-group-header">
+                                <label for="azimuth">Azimuth Angle (in deg) *</label>
+                                <div class="info-icon">i</div>
+                            </div>
+                            <input type="number" id="azimuth" name="azimuth" min="0" max="359.99" step="0.01" placeholder="e.g., 180" value="180" required title="Must be between 0 and 359.99 degrees">
+                        </div>
+                    </div>
+
+                    <div style="border-top: 2px solid #e0e0e0; padding-top: 20px; margin-top: 20px;">
+                        <h3 style="font-size: 16px; margin-bottom: 15px; color: #333;">Optional Parameters</h3>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <div class="form-group-header">
+                                    <label for="dcAcRatio">DC to AC Ratio</label>
+                                    <div class="info-icon">i</div>
+                                </div>
+                                <input type="number" id="dcAcRatio" name="dc_ac_ratio" step="0.01" min="0.01" placeholder="Default: 1.2" value="1.2" title="Must be a positive number">
+                            </div>
+                            <div class="form-group">
+                                <div class="form-group-header">
+                                    <label for="invEff">Inverter Efficiency (%)</label>
+                                    <div class="info-icon">i</div>
+                                </div>
+                                <input type="number" id="invEff" name="inv_eff" min="90" max="99.5" step="0.1" placeholder="Default: 96" value="96">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <div class="form-group-header">
+                                    <label for="gcr">Ground Coverage Ratio</label>
+                                    <div class="info-icon">i</div>
+                                </div>
+                                <input type="number" id="gcr" name="gcr" min="0.01" max="0.99" step="0.01" placeholder="Default: 0.4" value="0.4" title="Range: 0.01 to 0.99">
+                            </div>
+                            <div class="form-group">
+                                <div class="form-group-header">
+                                    <label for="albedo">Ground Reflectance (Albedo)</label>
+                                    <div class="info-icon">i</div>
+                                </div>
+                                <input type="number" id="albedo" name="albedo" min="0.001" max="0.999" step="0.001" placeholder="e.g., 0.2" title="Must be greater than 0 and less than 1">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <div class="form-group-header">
+                                    <label for="bifaciality">Bifaciality Ratio</label>
+                                    <div class="info-icon">i</div>
+                                </div>
+                                <input type="number" id="bifaciality" name="bifaciality" min="0" max="1" step="0.01" placeholder="e.g., 0.65" title="Range: 0 to 1 (typically 0.65 to 0.9)">
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 15px;">
+                            <div class="form-group-header" style="margin-bottom: 15px;">
+                                <label style="margin: 0; font-weight: bold;">Monthly Irradiance Loss (%)</label>
+                                <div class="info-icon">i</div>
+                            </div>
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="soiling_jan" style="font-size: 13px; margin-bottom: 6px;">Jan:</label>
+                                    <input type="number" id="soiling_jan" name="soiling_jan" min="0" max="100" step="0.1" placeholder="0" value="0">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="soiling_feb" style="font-size: 13px; margin-bottom: 6px;">Feb:</label>
+                                    <input type="number" id="soiling_feb" name="soiling_feb" min="0" max="100" step="0.1" placeholder="0" value="0">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="soiling_mar" style="font-size: 13px; margin-bottom: 6px;">Mar:</label>
+                                    <input type="number" id="soiling_mar" name="soiling_mar" min="0" max="100" step="0.1" placeholder="0" value="0">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="soiling_apr" style="font-size: 13px; margin-bottom: 6px;">Apr:</label>
+                                    <input type="number" id="soiling_apr" name="soiling_apr" min="0" max="100" step="0.1" placeholder="0" value="0">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="soiling_may" style="font-size: 13px; margin-bottom: 6px;">May:</label>
+                                    <input type="number" id="soiling_may" name="soiling_may" min="0" max="100" step="0.1" placeholder="0" value="0">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="soiling_jun" style="font-size: 13px; margin-bottom: 6px;">Jun:</label>
+                                    <input type="number" id="soiling_jun" name="soiling_jun" min="0" max="100" step="0.1" placeholder="0" value="0">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="soiling_jul" style="font-size: 13px; margin-bottom: 6px;">Jul:</label>
+                                    <input type="number" id="soiling_jul" name="soiling_jul" min="0" max="100" step="0.1" placeholder="0" value="0">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="soiling_aug" style="font-size: 13px; margin-bottom: 6px;">Aug:</label>
+                                    <input type="number" id="soiling_aug" name="soiling_aug" min="0" max="100" step="0.1" placeholder="0" value="0">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="soiling_sep" style="font-size: 13px; margin-bottom: 6px;">Sep:</label>
+                                    <input type="number" id="soiling_sep" name="soiling_sep" min="0" max="100" step="0.1" placeholder="0" value="0">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="soiling_oct" style="font-size: 13px; margin-bottom: 6px;">Oct:</label>
+                                    <input type="number" id="soiling_oct" name="soiling_oct" min="0" max="100" step="0.1" placeholder="0" value="0">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="soiling_nov" style="font-size: 13px; margin-bottom: 6px;">Nov:</label>
+                                    <input type="number" id="soiling_nov" name="soiling_nov" min="0" max="100" step="0.1" placeholder="0" value="0">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="soiling_dec" style="font-size: 13px; margin-bottom: 6px;">Dec:</label>
+                                    <input type="number" id="soiling_dec" name="soiling_dec" min="0" max="100" step="0.1" placeholder="0" value="0">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 20px;">
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">Calculate PVWatts</button>
+                    </div>
+                    </form>
+                </div>
+
+                <!-- Loading Indicator -->
+                <div class="pvwatts-loading" id="pvwattsLoading">
+                    <div class="loading-spinner"></div>
+                    <div class="pvwatts-loading-message">Calculating PVWatts data...</div>
+                </div>
+
+                <!-- PVWatts Results Tab -->
+                <div class="pvwatts-tab-content" id="resultsTab">
+                    <!-- AC Power Output Results -->
+                    <div id="acPowerResults" style="margin-bottom: 30px;">
+                        <h3 style="font-size: 18px; margin-bottom: 15px; color: #333; border-bottom: 2px solid #FF9800; padding-bottom: 10px;">PVWatts Monthly Results</h3>
+                        <table class="pvwatts-results-table" id="consolidatedResultsTable">
+                            <thead>
+                                <tr>
+                                    <th>Month</th>
+                                    <th class="numeric">AC Power Output<br>(kWh)</th>
+                                    <th class="numeric">DC Power Output<br>(kWh)</th>
+                                    <th class="numeric">POA Irradiance<br>(kWh/m²)</th>
+                                    <th class="numeric">Solar radiation<br>(kWh/m²/day)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="consolidatedResultsTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- PVWatts Results Station Information -->
+                    <div id="stationInfoResults" style="margin-top: 30px; margin-bottom: 30px;">
+                        <h3 style="font-size: 18px; margin-bottom: 15px; color: #333; border-bottom: 2px solid #FF9800; padding-bottom: 10px;">Station Information</h3>
+                        <table class="pvwatts-results-table" id="stationInfoTable">
+                            <tbody id="stationInfoTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- PVWatts Results Performance Metrics -->
+                    <div id="performanceMetricsResults" style="margin-top: 30px; margin-bottom: 30px;">
+                        <h3 style="font-size: 18px; margin-bottom: 15px; color: #333; border-bottom: 2px solid #FF9800; padding-bottom: 10px;">Performance Metrics</h3>
+                        <table class="pvwatts-results-table metrics-results-table" id="performanceMetricsTable">
+                            <tbody id="performanceMetricsTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                </div>
+            </div>
+            
+
+            <!-- Location Map Section -->
+            <div class="content-section">
+                <div class="section-header section-header-border">
+                    <h2 class="section-title" id="locationMapSection">Location Map</h2>
+                    <a href="https://www.google.com/maps/?q={{ site.latitude }},{{ site.longitude }}" 
+                       target="_blank" class="btn btn-primary">
+                        View on Google Maps
+                    </a>
+                </div>
+                <div class="map-container" id="map"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet CSS and JS for map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <script>
+        // Initialize map
+        const latitude = {{ site.latitude }};
+        const longitude = {{ site.longitude }};
+        const address = '{{ site.address }}';
+
+        const map = L.map('map').setView([latitude, longitude], 12);
+
+        // Add OpenStreetMap tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19,
+            referrerPolicy: 'strict-origin-when-cross-origin'
+        }).addTo(map);
+
+        // Add marker for the site
+        L.marker([latitude, longitude]).addTo(map)
+            .bindPopup(`<strong>${address}</strong><br>Lat: ${latitude.toFixed(4)}, Lon: ${longitude.toFixed(4)}`)
+            .openPopup();
+
+
+        // Fetch solar resource data
+        async function fetchSolarResourceData() {
+            const container = document.getElementById('solarResourceContainer');
+            
+            try {
+                const response = await fetch(`/api/solar/detail?latitude=${latitude}&longitude=${longitude}`);
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Failed to fetch solar resource data');
+                }
+                
+                const data = await response.json();
+                
+                // Check if we have the nested outputs structure
+                if (data.outputs && data.outputs.avg_dni && data.outputs.avg_ghi && data.outputs.avg_lat_tilt) {
+                    // Render as table with nested structure
+                    let html = renderMonthlyTable(data.outputs);
+                    container.innerHTML = html;
+                } else {
+                    // Render as cards (fall back)
+                    let html = renderDataCards(data);
+                    container.innerHTML = html;
+                }
+                
+            } catch (error) {
+                console.error('Error fetching solar resource data:', error);
+                container.innerHTML = `
+                    <div class="error-message">
+                        <strong>Error loading solar resource data:</strong><br>
+                        ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        function renderMonthlyTable(outputs) {
+            const monthKeys = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+            const months = ['January', 'February', 'March', 'April', 'May', 'June', 
+                           'July', 'August', 'September', 'October', 'November', 'December'];
+            
+            // Extract monthly and annual data
+            const nniMonthly = outputs.avg_dni?.monthly || {};
+            const ghiMonthly = outputs.avg_ghi?.monthly || {};
+            const latTiltMonthly = outputs.avg_lat_tilt?.monthly || {};
+            
+            const nniAnnual = (outputs.avg_dni?.annual || 0).toFixed(2);
+            const ghiAnnual = (outputs.avg_ghi?.annual || 0).toFixed(2);
+            const latTiltAnnual = (outputs.avg_lat_tilt?.annual || 0).toFixed(2);
+            
+            let html = `
+                <table class="solar-monthly-table">
+                    <thead>
+                        <tr>
+                            <th>Month</th>
+                            <th>Average Direct Normal Irradiance<br>(kWh / m² / day)</th>
+                            <th>Average Global Horizontal Irradiance<br>(kWh / m² / day)</th>
+                            <th>Average Tilt at Latitude<br>(kWh / m² / day)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            // Add monthly rows
+            for (let i = 0; i < 12; i++) {
+                const monthKey = monthKeys[i];
+                const nni = nniMonthly[monthKey] ? nniMonthly[monthKey].toFixed(2) : '-';
+                const ghi = ghiMonthly[monthKey] ? ghiMonthly[monthKey].toFixed(2) : '-';
+                const latTilt = latTiltMonthly[monthKey] ? latTiltMonthly[monthKey].toFixed(2) : '-';
+                
+                html += `
+                        <tr>
+                            <td>${months[i]}</td>
+                            <td>${nni}</td>
+                            <td>${ghi}</td>
+                            <td>${latTilt}</td>
+                        </tr>
+                `;
+            }
+            
+            // Add annual row
+            html += `
+                        <tr>
+                            <td>Annual (avg)</td>
+                            <td>${nniAnnual}</td>
+                            <td>${ghiAnnual}</td>
+                            <td>${latTiltAnnual}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            `;
+            
+            return html;
+        }
+
+        function renderMonthlyTableLegacy(data) {
+            const months = ['January', 'February', 'March', 'April', 'May', 'June', 
+                           'July', 'August', 'September', 'October', 'November', 'December'];
+            
+            const nniData = Array.isArray(data.dni) ? data.dni : [];
+            const ghiData = Array.isArray(data.ghi) ? data.ghi : [];
+            const latTiltData = Array.isArray(data.lat_tilt) ? data.lat_tilt : [];
+            
+            // Get annual values from API response if available
+            const nniAnnual = (data.annual_dni !== undefined) ? data.annual_dni.toFixed(2) : '-';
+            const ghiAnnual = (data.annual_ghi !== undefined) ? data.annual_ghi.toFixed(2) : '-';
+            const latTiltAnnual = (data.annual_lat_tilt !== undefined) ? data.annual_lat_tilt.toFixed(2) : '-';
+            
+            let html = `
+                <table class="solar-monthly-table">
+                    <thead>
+                        <tr>
+                            <th>Month</th>
+                            <th>NNI<br>(kWh / m² / day)</th>
+                            <th>GHI<br>(kWh / m² / day)</th>
+                            <th>LAT_TILT<br>(kWh / m² / day)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            // Add monthly rows
+            for (let i = 0; i < 12; i++) {
+                const nni = nniData[i] ? nniData[i].toFixed(2) : '-';
+                const ghi = ghiData[i] ? ghiData[i].toFixed(2) : '-';
+                const latTilt = latTiltData[i] ? latTiltData[i].toFixed(2) : '-';
+                
+                html += `
+                        <tr>
+                            <td>${months[i]}</td>
+                            <td>${nni}</td>
+                            <td>${ghi}</td>
+                            <td>${latTilt}</td>
+                        </tr>
+                `;
+            }
+            
+            // Add annual row
+            html += `
+                        <tr>
+                            <td>Annual</td>
+                            <td>${nniAnnual}</td>
+                            <td>${ghiAnnual}</td>
+                            <td>${latTiltAnnual}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            `;
+            
+            return html;
+        }
+
+        function renderDataCards(data) {
+            // Handle nested outputs structure
+            const dataToRender = data.outputs || data;
+            
+            // Build HTML for card-based display
+            let html = '<div class="solar-data-content">';
+            
+            // Flatten nested objects for display
+            function flattenObject(obj, prefix = '') {
+                const result = {};
+                for (const [key, value] of Object.entries(obj)) {
+                    if (value === null || value === undefined) continue;
+                    
+                    if (typeof value === 'object' && !Array.isArray(value)) {
+                        // Skip nested objects with annual/monthly structure
+                        if (value.annual !== undefined && value.monthly !== undefined) {
+                            // This is a field with annual/monthly data, show the annual value
+                            const label = prefix ? `${prefix} ${key}` : key;
+                            result[label] = value.annual;
+                        } else {
+                            // Recursively flatten other nested objects
+                            Object.assign(result, flattenObject(value, prefix ? `${prefix} ${key}` : key));
+                        }
+                    } else if (!Array.isArray(value)) {
+                        result[prefix ? `${prefix} ${key}` : key] = value;
+                    }
+                }
+                return result;
+            }
+            
+            const flatData = flattenObject(dataToRender);
+            
+            // Display each field
+            for (const [key, value] of Object.entries(flatData)) {
+                if (value !== null && value !== undefined) {
+                    // Format the key to be human-readable
+                    const label = key
+                        .replace(/_/g, ' ')
+                        .split(' ')
+                        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                        .join(' ');
+                    
+                    // Format the value
+                    let displayValue = value;
+                    let unit = '';
+                    
+                    // Add units based on key
+                    if (key.includes('irradiance') || key.includes('poa') || key.includes('avg_')) {
+                        unit = 'kWh/m²/day';
+                    } else if (key.includes('temperature')) {
+                        unit = '°C';
+                    } else if (key.includes('wind')) {
+                        unit = 'm/s';
+                    }
+                    
+                    // Format numeric values
+                    if (typeof value === 'number') {
+                        displayValue = value.toFixed(2);
+                    }
+                    
+                    html += `
+                        <div class="solar-data-item">
+                            <div class="solar-data-label">${label}</div>
+                            <div class="solar-data-value">${displayValue}</div>
+                            ${unit ? `<div class="solar-data-unit">${unit}</div>` : ''}
+                        </div>
+                    `;
+                }
+            }
+            
+            html += '</div>';
+            return html;
+        }
+
+        // Fetch data when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchSolarResourceData();
+            loadPVWattsMetadata();
+            
+            // Initialize results flag
+            document.getElementById('pvwattsFormNav').dataset.hasResults = 'false';
+        });
+
+        // Fetch PVWatts field metadata from backend
+        async function loadPVWattsMetadata() {
+            try {
+                const response = await fetch('/api/solar/pvwatts-metadata');
+                
+                if (!response.ok) {
+                    console.error('Failed to fetch PVWatts metadata');
+                    return;
+                }
+                
+                const metadata = await response.json();
+                
+                // Update tooltips with fetched descriptions
+                updateTooltips(metadata);
+                
+            } catch (error) {
+                console.error('Error fetching PVWatts metadata:', error);
+            }
+        }
+
+        function updateTooltips(metadata) {
+            // Map field names to their corresponding form elements
+            const fieldMapping = {
+                'latitude': 'pvLat',
+                'longitude': 'pvLon',
+                'system_capacity': 'systemCapacity',
+                'module_type': 'moduleType',
+                'losses': 'losses',
+                'array_type': 'arrayType',
+                'tilt': 'tilt',
+                'azimuth': 'azimuth',
+                'dc_ac_ratio': 'dcAcRatio',
+                'inv_eff': 'invEff',
+                'gcr': 'gcr',
+                'albedo': 'albedo',
+                'bifaciality': 'bifaciality',
+                'soiling': 'soiling'
+            };
+            
+            // Update each info icon with the help_text from metadata
+            for (const [fieldName, elementId] of Object.entries(fieldMapping)) {
+                if (metadata[fieldName] && metadata[fieldName].help_text) {
+                    // For soiling, attach tooltip to the monthly irradiance loss section header
+                    if (fieldName === 'soiling') {
+                        const sectionHeader = document.querySelector('[style*="border-top"]')?.querySelector('.form-group-header');
+                        if (sectionHeader) {
+                            const infoIcon = sectionHeader.querySelector('.info-icon');
+                            if (infoIcon) {
+                                infoIcon.setAttribute('data-tooltip', metadata[fieldName].help_text);
+                            }
+                        }
+                    } else {
+                        const infoIcon = document.querySelector(`#${elementId}`)?.closest('.form-group')?.querySelector('.info-icon');
+                        if (infoIcon) {
+                            infoIcon.setAttribute('data-tooltip', metadata[fieldName].help_text);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Form submission handler for PVWatts calculation
+        document.getElementById('pvwattsForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Comprehensive input validation
+            const validationErrors = [];
+            
+            // Helper function to check if value is in range
+            function validateRange(value, min, max, minInclusive = true, maxInclusive = true, fieldName = '') {
+                const num = parseFloat(value);
+                if (isNaN(num)) return true; // Skip if not a number
+                
+                if (!minInclusive && num <= min) {
+                    validationErrors.push(`${fieldName} must be greater than ${min}`);
+                    return false;
+                }
+                if (minInclusive && num < min) {
+                    validationErrors.push(`${fieldName} must be at least ${min}`);
+                    return false;
+                }
+                if (!maxInclusive && num >= max) {
+                    validationErrors.push(`${fieldName} must be less than ${max}`);
+                    return false;
+                }
+                if (maxInclusive && num > max) {
+                    validationErrors.push(`${fieldName} must be at most ${max}`);
+                    return false;
+                }
+                return true;
+            }
+
+            // Validate required fields
+            const lat = parseFloat(document.getElementById('pvLat').value);
+            const lon = parseFloat(document.getElementById('pvLon').value);
+            const systemCapacity = parseFloat(document.getElementById('systemCapacity').value);
+            const moduleType = document.getElementById('moduleType').value;
+            const losses = parseFloat(document.getElementById('losses').value);
+            const arrayType = document.getElementById('arrayType').value;
+            const tilt = parseFloat(document.getElementById('tilt').value);
+            const azimuth = parseFloat(document.getElementById('azimuth').value);
+
+            // Latitude: -90 to 90
+            validateRange(lat, -90, 90, true, true, 'Latitude');
+            
+            // Longitude: -180 to 180
+            validateRange(lon, -180, 180, true, true, 'Longitude');
+
+            // System Capacity: 0.05 to 500000
+            validateRange(systemCapacity, 0.05, 500000, true, true, 'System Capacity');
+
+            // Module Type: 0, 1, 2
+            if (![0, 1, 2].includes(parseInt(moduleType))) {
+                validationErrors.push('Module Type must be 0 (Standard), 1 (Premium), or 2 (Thin Film)');
+            }
+
+            // Losses: -5 to 99
+            validateRange(losses, -5, 99, true, true, 'System Losses');
+
+            // Array Type: 0, 1, 2, 3, 4
+            if (![0, 1, 2, 3, 4].includes(parseInt(arrayType))) {
+                validationErrors.push('Array Type must be between 0 and 4');
+            }
+
+            // Tilt: 0 to 90
+            validateRange(tilt, 0, 90, true, true, 'Tilt Angle');
+
+            // Azimuth: 0 to <360 (exclusive on upper bound)
+            validateRange(azimuth, 0, 360, true, false, 'Azimuth Angle');
+
+            // Validate optional fields if provided
+            const dcAcRatio = document.getElementById('dcAcRatio').value;
+            if (dcAcRatio) {
+                const dcAcValue = parseFloat(dcAcRatio);
+                if (dcAcValue <= 0) {
+                    validationErrors.push('DC to AC Ratio must be greater than 0 (positive value)');
+                }
+            }
+
+            const invEff = document.getElementById('invEff').value;
+            if (invEff) {
+                validateRange(invEff, 90, 99.5, true, true, 'Inverter Efficiency');
+            }
+
+            const gcr = document.getElementById('gcr').value;
+            if (gcr) {
+                validateRange(gcr, 0.01, 0.99, true, true, 'Ground Coverage Ratio');
+            }
+
+            const albedo = document.getElementById('albedo').value;
+            if (albedo) {
+                const albedoValue = parseFloat(albedo);
+                if (albedoValue <= 0 || albedoValue >= 1) {
+                    validationErrors.push('Albedo must be greater than 0 and less than 1');
+                }
+            }
+
+            const bifaciality = document.getElementById('bifaciality').value;
+            if (bifaciality) {
+                validateRange(bifaciality, 0, 1, true, true, 'Bifaciality Ratio');
+            }
+
+            // Validate monthly soiling values: 0 to 100
+            const monthIds = ['soiling_jan', 'soiling_feb', 'soiling_mar', 'soiling_apr', 'soiling_may', 'soiling_jun',
+                              'soiling_jul', 'soiling_aug', 'soiling_sep', 'soiling_oct', 'soiling_nov', 'soiling_dec'];
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            
+            monthIds.forEach((id, index) => {
+                const value = parseFloat(document.getElementById(id).value);
+                validateRange(value, 0, 100, true, true, `Monthly Irradiance Loss - ${monthNames[index]}`);
+            });
+
+            // If there are validation errors, show them and prevent submission
+            if (validationErrors.length > 0) {
+                const errorMessage = 'Validation Errors:\n\n' + validationErrors.join('\n');
+                alert(errorMessage);
+                return;
+            }
+
+            // Collect required fields
+            const requiredData = {
+                lat: lat,
+                lon: lon,
+                system_capacity: systemCapacity,
+                module_type: parseInt(moduleType),
+                losses: losses,
+                array_type: parseInt(arrayType),
+                tilt: tilt,
+                azimuth: azimuth
+            };
+
+            // Collect optional fields
+            const optionalData = {};
+            const optionalFields = ['dcAcRatio', 'invEff', 'gcr', 'albedo', 'bifaciality'];
+            
+            optionalFields.forEach(fieldId => {
+                const element = document.getElementById(fieldId);
+                if (element && element.value) {
+                    const fieldName = fieldId.replace(/([A-Z])/g, '_$1').toLowerCase();
+                    optionalData[fieldName] = parseFloat(element.value);
+                }
+            });
+
+            // Collect monthly irradiance loss values
+            const monthlyLosses = [];
+            
+            for (const monthId of monthIds) {
+                const value = document.getElementById(monthId).value;
+                monthlyLosses.push(parseFloat(value) || 0);
+            }
+
+            // Include soiling in optional data if any values are provided
+            if (monthlyLosses.some(v => v !== 0)) {
+                optionalData['soiling'] = monthlyLosses.join(',');
+            }
+
+            // Combine all data
+            const payload = { ...requiredData, ...optionalData };
+
+            // Build query string
+            const queryString = new URLSearchParams(payload).toString();
+            const apiUrl = `/api/solar/pvwatts?${queryString}`;
+
+            // Show loading spinner
+            showPVWattsLoading(true);
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error('PVWatts calculation error:', errorData);
+                    alert('Error calculating PVWatts data. Check console and ensure all inputs are valid.');
+                    showPVWattsLoading(false);
+                    return;
+                }
+
+                const result = await response.json();
+                console.log('PVWatts calculation result:', result);
+                
+                // Hide loading spinner
+                showPVWattsLoading(false);
+                
+                // Display results
+                displayPVWattsResults(result, payload);
+                
+                // Switch to results tab
+                switchTab('results');
+                
+            } catch (error) {
+                console.error('Error submitting PVWatts form:', error);
+                alert('Error submitting form. Please try again.');
+                showPVWattsLoading(false);
+            }
+        });
+
+        // Tab switching functionality
+        function switchTab(tabName) {
+            const tabs = document.querySelectorAll('.pvwatts-tab-content');
+            
+            tabs.forEach(tab => tab.classList.remove('active'));
+            document.getElementById(tabName + 'Tab').classList.add('active');
+            
+            // Show/hide navigation based on the tab
+            const resultsNav = document.getElementById('pvwattsResultsNav');
+            const formNav = document.getElementById('pvwattsFormNav');
+            
+            if (tabName === 'results') {
+                resultsNav.classList.add('show');
+                formNav.classList.remove('show');
+            } else if (tabName === 'form') {
+                resultsNav.classList.remove('show');
+                // Show form nav only if results exist
+                if (document.getElementById('pvwattsFormNav').dataset.hasResults === 'true') {
+                    formNav.classList.add('show');
+                } else {
+                    formNav.classList.remove('show');
+                }
+            }
+            
+            // Scroll to section
+            document.getElementById('pvwattsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Show/hide loading spinner
+        function showPVWattsLoading(show) {
+            const loading = document.getElementById('pvwattsLoading');
+            if (show) {
+                loading.classList.add('show');
+            } else {
+                loading.classList.remove('show');
+            }
+        }
+
+        // Reset form and go back to initial state
+        function resetForm() {
+            document.getElementById('pvwattsForm').reset();
+            document.getElementById('pvLat').value = {{ site.latitude }};
+            document.getElementById('pvLon').value = {{ site.longitude }};
+            
+            // Reset soiling fields
+            const monthIds = ['soiling_jan', 'soiling_feb', 'soiling_mar', 'soiling_apr', 'soiling_may', 'soiling_jun',
+                              'soiling_jul', 'soiling_aug', 'soiling_sep', 'soiling_oct', 'soiling_nov', 'soiling_dec'];
+            monthIds.forEach(id => {
+                document.getElementById(id).value = '0';
+            });
+            
+            // Clear results data
+            document.getElementById('consolidatedResultsTableBody').innerHTML = '';
+            document.getElementById('stationInfoTableBody').innerHTML = '';
+            document.getElementById('performanceMetricsTableBody').innerHTML = '';
+            
+            // Clear results flag
+            document.getElementById('pvwattsFormNav').dataset.hasResults = 'false';
+            
+            switchTab('form');
+        }
+
+        // Display PVWatts results
+        function displayPVWattsResults(data, calculationParams) {
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                                'July', 'August', 'September', 'October', 'November', 'December'];
+            
+            // Mark that results exist
+            document.getElementById('pvwattsFormNav').dataset.hasResults = 'true';
+            
+            // Get outputs from nested response structure
+            const outputs = data.outputs || data;
+            
+            // Populate consolidated results table
+            populateConsolidatedResultsTable(
+                outputs.ac_monthly,
+                outputs.dc_monthly,
+                outputs.poa_monthly,
+                outputs.solrad_monthly,
+                outputs.ac_annual,
+                outputs.solrad_annual,
+                monthNames
+            );
+            
+            // Display station information
+            displayStationInformation(data);
+            
+            // Display performance metrics
+            displayPerformanceMetrics(data);
+        }
+
+        function populateConsolidatedResultsTable(acData, dcData, poaData, solradData, acAnnual, solradAnnual, monthNames) {
+            const tbody = document.getElementById('consolidatedResultsTableBody');
+            tbody.innerHTML = '';
+            
+            
+            // Add monthly rows
+            for (let i = 0; i < monthNames.length; i++) {
+                const acValue = (Array.isArray(acData) && acData[i] !== undefined) ? acData[i] : 0;
+                const dcValue = (Array.isArray(dcData) && dcData[i] !== undefined) ? dcData[i] : 0;
+                const poaValue = (Array.isArray(poaData) && poaData[i] !== undefined) ? poaData[i] : 0;
+                const solradValue = (Array.isArray(solradData) && solradData[i] !== undefined) ? solradData[i] : 0;
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${monthNames[i]}</td>
+                    <td class="numeric">${typeof acValue === 'number' ? acValue.toFixed(2) : '-'}</td>
+                    <td class="numeric">${typeof dcValue === 'number' ? dcValue.toFixed(2) : '-'}</td>
+                    <td class="numeric">${typeof poaValue === 'number' ? poaValue.toFixed(2) : '-'}</td>
+                    <td class="numeric">${typeof solradValue === 'number' ? solradValue.toFixed(2) : '-'}</td>
+                `;
+                tbody.appendChild(row);
+            }
+            
+            // Add annual total row
+            const totalRow = document.createElement('tr');
+            totalRow.innerHTML = `
+                <td><strong>Annual Total</strong></td>
+                <td class="numeric"><strong>${acAnnual !== undefined ? acAnnual.toFixed(2) : '-'}</strong></td>
+                <td class="numeric"><strong>-</strong></td>
+                <td class="numeric"><strong>-</strong></td>
+                <td class="numeric"><strong>${solradAnnual !== undefined ? solradAnnual.toFixed(2) : '-'}</strong></td>
+            `;
+            tbody.appendChild(totalRow);
+        }
+
+        function displayStationInformation(data) {
+            const stationInfo = data.station_info || {};
+            const tbody = document.getElementById('stationInfoTableBody');
+            tbody.innerHTML = '';
+            
+            // Helper function to format location string
+            const formatLocation = () => {
+                const city = stationInfo.city || '';
+                const state = stationInfo.state || '';
+                if (city && state) {
+                    return `${city}, ${state}`;
+                }
+                return state || 'Not available';
+            };
+            
+            // Format timezone
+            const tzOffset = stationInfo.tz !== undefined ? stationInfo.tz : 'Not available';
+            const tzString = tzOffset !== 'Not available' ? `UTC ${tzOffset >= 0 ? '+' : ''}${tzOffset}` : 'Not available';
+            
+            // Define station information rows
+            const stationInfoRows = [
+                { label: 'Station Coordinates', value: stationInfo.lat && stationInfo.lon ? `${stationInfo.lat.toFixed(4)}° N, ${stationInfo.lon.toFixed(4)}° W` : 'Not available' },
+                { label: 'Elevation', value: stationInfo.elev !== undefined ? `${stationInfo.elev} m` : 'Not available' },
+                { label: 'Timezone Offset', value: tzString },
+                { label: 'Location', value: formatLocation() },
+                { label: 'Location ID', value: stationInfo.location || 'Not available' },
+                { label: 'Distance from Requested Site', value: stationInfo.distance !== undefined ? `${stationInfo.distance} km` : 'Not available' },
+                { label: 'Weather Data Source', value: stationInfo.weather_data_source || 'Not available' }
+            ];
+            
+            // Add rows to table
+            stationInfoRows.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.label}</td>
+                    <td>${item.value}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function displayPerformanceMetrics(data) {
+            const outputs = data.outputs || data;
+            const tbody = document.getElementById('performanceMetricsTableBody');
+            tbody.innerHTML = '';
+            
+            // Define performance metrics rows
+            const performanceMetricsRows = [
+                { label: 'DC Capacity Factor', value: outputs.capacity_factor !== undefined ? `${(outputs.capacity_factor).toFixed(2)}%` : 'Not available' }
+            ];
+            
+            // Add rows to table
+            performanceMetricsRows.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.label}</td>
+                    <td>${item.value}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function getModuleTypeName(typeId) {
+            const types = { 0: 'Standard', 1: 'Premium', 2: 'Thin Film' };
+            return types[typeId] || 'Unknown';
+        }
+
+        function getArrayTypeName(typeId) {
+            const types = {
+                0: 'Fixed - Open Rack',
+                1: 'Fixed - Roof Mounted',
+                2: 'Fixed - 1-Axis',
+                3: 'Fixed - 1-Axis Backtracking',
+                4: 'Fixed - 2-Axis'
+            };
+            return types[typeId] || 'Unknown';
+        }
+
+        // ===== Table of Contents Menu Functionality =====
+        
+        // Handle smooth scrolling for TOC links
+        document.querySelectorAll('.toc-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = link.getAttribute('href').slice(1);
+                const targetElement = document.getElementById(targetId);
+                
+                if (targetElement) {
+                    targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    updateActiveTocItem();
+                }
+            });
+        });
+
+        // Update active TOC item based on scroll position
+        function updateActiveTocItem() {
+            const sections = [
+                { id: 'solarResourceSection', link: document.querySelector('[href="#solarResourceSection"]') },
+                { id: 'pvwattsSection', link: document.querySelector('[href="#pvwattsSection"]') },
+                { id: 'locationMapSection', link: document.querySelector('[href="#locationMapSection"]') }
+            ];
+
+            // Get viewport center position
+            const viewportCenter = window.innerHeight / 2 + window.scrollY;
+
+            let activeSection = null;
+            let closestDistance = Infinity;
+
+            sections.forEach(section => {
+                const element = document.getElementById(section.id);
+                if (element) {
+                    const elementCenter = element.getBoundingClientRect().top + window.scrollY + element.offsetHeight / 2;
+                    const distance = Math.abs(elementCenter - viewportCenter);
+
+                    if (distance < closestDistance) {
+                        closestDistance = distance;
+                        activeSection = section;
+                    }
+                }
+            });
+
+            // Remove active class from all links
+            document.querySelectorAll('.toc-link').forEach(link => {
+                link.classList.remove('active');
+            });
+
+            // Add active class to the closest section
+            if (activeSection && activeSection.link) {
+                activeSection.link.classList.add('active');
+            }
+        }
+
+        // Update active TOC item on scroll
+        window.addEventListener('scroll', updateActiveTocItem);
+
+        // Initialize active TOC item on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                updateActiveTocItem();
+            }, 100);
+        });
+
+    </script>
+</body>
+</html>

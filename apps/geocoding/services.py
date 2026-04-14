@@ -5,7 +5,6 @@ from rest_framework import status
 
 import logging
 import requests
-import json
 
 from config.config import GEOCODING_SERVICE_URL, APP_USER_AGENT
 
@@ -21,8 +20,10 @@ class GeocodedLocation:
 
 
 def geocode_address(address: str) -> GeocodedLocation:
-    """Geocode an address string using the configured geocoding service."""
+    """Geocode an address string using an external geocoding service."""
     
+    logger.debug(f"Attempting to geocode address: '{address}' using {GEOCODING_SERVICE_URL}")
+
     api_url = f"{GEOCODING_SERVICE_URL}"
     
     payload = {

@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class PVWattsCalculation:
+    # Input parameters
     latitude: float
     longitude: float
     system_capacity: float
@@ -20,7 +21,7 @@ class PVWattsCalculation:
     tilt: float
     azimuth: float
     
-    # Optional parameters
+    # Optional input parameters
     file_id: str = None
     dataset: str = None
     radius: int = None
@@ -30,27 +31,42 @@ class PVWattsCalculation:
     inv_eff: float = None
     bifaciality: float = None
     albedo: float = None
-    soiling: str = None
+    soiling: list[float] | None = None
     
-    # Response outputs
+    # Output Station Info Fields
+    station_lat: float = None
+    station_lon: float = None
+    elevation: float = None
+    timezone: float = None
+    location: str = None
+    city: str = None
+    state: str = None
+    solar_resource_file: str = None
+    distance: int = None
+    weather_data_source: str = None
+    
+    # Output Fields
     ac_annual: float = None
     solrad_annual: float = None
     capacity_factor: float = None
     ac_monthly: list = None
     solrad_monthly: list = None
+    poa_monthly: list = None
+    dc_monthly: list = None
 
 
 @dataclass(frozen=True)
 class SolarResourceReading:
+    # Input parameters
     latitude: float
     longitude: float
     
-    # Annual data
+    # Output Annual data
     annual_avg_dni: float
     annual_avg_ghi: float
     annual_avg_lat_tilt: float
     
-    # Monthly data
+    # Output Monthly data
     monthly_avg_dni: dict
     monthly_avg_ghi: dict
     monthly_avg_lat_tilt: dict
@@ -58,7 +74,7 @@ class SolarResourceReading:
 
 
 def fetch_solar_resource_data(latitude: float, longitude: float) -> SolarResourceReading:
-    """Fetch solar resource data from NREL API and return SolarResourceReading."""
+    """Fetch solar resource data from external NREL API and return SolarResourceReading."""
 
     api_url = f"{NREL_SOLAR_RESOURCE_URL}"
 
@@ -78,8 +94,9 @@ def fetch_solar_resource_data(latitude: float, longitude: float) -> SolarResourc
         return None, status.HTTP_500_INTERNAL_SERVER_ERROR
     
     # Check for API errors
-    if data.get("error"):
-        logger.error(f"API error occurred for lat: {latitude}, lon: {longitude}: {data.get('error')}")
+    errors = data.get("errors", [])
+    if errors:
+        logger.error(f"API error occurred for lat: {latitude}, lon: {longitude} due to: {errors}")
         return None, response.status_code
 
     # Extract lat and lon
@@ -116,6 +133,7 @@ def fetch_solar_resource_data(latitude: float, longitude: float) -> SolarResourc
         monthly_avg_lat_tilt = avg_lat_tilt.get("monthly", {})
     
     # Create and return SolarResourceReading
+    logger.debug(f"Successfully fetched solar resource data for lat: {latitude}, lon: {longitude} from NREL API with annual_avg_dni: {annual_avg_dni}, annual_avg_ghi: {annual_avg_ghi}, annual_avg_lat_tilt: {annual_avg_lat_tilt}")
     return SolarResourceReading(
         latitude=lat,
         longitude=lon,
@@ -147,11 +165,11 @@ def fetch_pvwatts_calculation(
     inv_eff: float = None,
     bifaciality: float = None,
     albedo: float = None,
-    soiling: str = None,
+    soiling: list[float] | None = None,
 ) -> tuple:
     """Fetch PVWatts calculation from NREL API and return PVWattsCalculation."""
 
-    api_url = f"{NREL_PVWATTS_URL}.json"
+    api_url = f"{NREL_PVWATTS_URL}"
 
     # Build payload with required parameters
     payload = {
@@ -164,17 +182,10 @@ def fetch_pvwatts_calculation(
         "tilt": tilt,
         "azimuth": azimuth,
         "api_key": f"{NREL_API_KEY}",
+        "format": "json"
     }
 
     # Add optional parameters if provided
-    if file_id is not None:
-        payload["file_id"] = file_id
-    if dataset is not None:
-        payload["dataset"] = dataset
-    if radius is not None:
-        payload["radius"] = radius
-    if timeframe is not None:
-        payload["timeframe"] = timeframe
     if dc_ac_ratio is not None:
         payload["dc_ac_ratio"] = dc_ac_ratio
     if gcr is not None:
@@ -186,6 +197,7 @@ def fetch_pvwatts_calculation(
     if albedo is not None:
         payload["albedo"] = albedo
     if soiling is not None:
+        # Pass list of floats directly to NREL API
         payload["soiling"] = soiling
 
     try:
@@ -204,65 +216,72 @@ def fetch_pvwatts_calculation(
     errors = data.get("errors", [])
     if errors:
         logger.error(
-            f"PVWatts API returned errors for lat: {lat}, lon: {lon}: {errors}"
+            f"PVWatts API returned errors for lat: {lat}, lon: {lon} due to: {errors}"
         )
         return None, status.HTTP_422_UNPROCESSABLE_ENTITY
 
-    # Extract inputs
-    inputs = data.get("inputs", {})
-    response_lat = float(inputs.get("lat", lat))
-    response_lon = float(inputs.get("lon", lon))
-    response_system_capacity = float(inputs.get("system_capacity", system_capacity))
-    response_module_type = int(inputs.get("module_type", module_type))
-    response_losses = float(inputs.get("losses", losses))
-    response_array_type = int(inputs.get("array_type", array_type))
-    response_tilt = float(inputs.get("tilt", tilt))
-    response_azimuth = float(inputs.get("azimuth", azimuth))
+    # # Extract inputs (echoed back from the API response)
+    # inputs = data.get("inputs", {})
+    
+    # Extract station info fields
+    station_info = data.get("station_info", {})
+    station_lat = station_info.get("lat")
+    station_lon = station_info.get("lon")
+    elevation = station_info.get("elev")
+    timezone = station_info.get("tz")
+    location = station_info.get("location")
+    city = station_info.get("city")
+    state = station_info.get("state")
+    solar_resource_file = station_info.get("solar_resource_file")
+    distance = station_info.get("distance")
+    weather_data_source = station_info.get("weather_data_source")
 
-    # Extract optional parameters from response
-    response_file_id = inputs.get("file_id")
-    response_dataset = inputs.get("dataset")
-    response_radius = inputs.get("radius")
-    response_timeframe = inputs.get("timeframe")
-    response_dc_ac_ratio = inputs.get("dc_ac_ratio")
-    response_gcr = inputs.get("gcr")
-    response_inv_eff = inputs.get("inv_eff")
-    response_bifaciality = inputs.get("bifaciality")
-    response_albedo = inputs.get("albedo")
-    response_soiling = inputs.get("soiling")
-
-    # Extract outputs
+    # Extract output fields
     outputs = data.get("outputs", {})
     ac_annual = outputs.get("ac_annual")
     solrad_annual = outputs.get("solrad_annual")
     capacity_factor = outputs.get("capacity_factor")
     ac_monthly = outputs.get("ac_monthly")
     solrad_monthly = outputs.get("solrad_monthly")
+    poa_monthly = outputs.get("poa_monthly")
+    dc_monthly = outputs.get("dc_monthly")
 
     # Create and return PVWattsCalculation
     return PVWattsCalculation(
-        latitude=response_lat,
-        longitude=response_lon,
-        system_capacity=response_system_capacity,
-        module_type=response_module_type,
-        losses=response_losses,
-        array_type=response_array_type,
-        tilt=response_tilt,
-        azimuth=response_azimuth,
-        file_id=response_file_id,
-        dataset=response_dataset,
-        radius=response_radius,
-        timeframe=response_timeframe,
-        dc_ac_ratio=response_dc_ac_ratio,
-        gcr=response_gcr,
-        inv_eff=response_inv_eff,
-        bifaciality=response_bifaciality,
-        albedo=response_albedo,
-        soiling=response_soiling,
+        latitude=lat,
+        longitude=lon,
+        system_capacity=system_capacity,
+        module_type=module_type,
+        losses=losses,
+        array_type=array_type,
+        tilt=tilt,
+        azimuth=azimuth,
+        file_id=file_id,
+        dataset=dataset,
+        radius=radius,
+        timeframe=timeframe,
+        dc_ac_ratio=dc_ac_ratio,
+        gcr=gcr,
+        inv_eff=inv_eff,
+        bifaciality=bifaciality,
+        albedo=albedo,
+        soiling=soiling,
+        station_lat=station_lat,
+        station_lon=station_lon,
+        elevation=elevation,
+        timezone=timezone,
+        location=location,
+        city=city,
+        state=state,
+        solar_resource_file=solar_resource_file,
+        distance=distance,
+        weather_data_source=weather_data_source,
         ac_annual=ac_annual,
         solrad_annual=solrad_annual,
         capacity_factor=capacity_factor,
         ac_monthly=ac_monthly,
         solrad_monthly=solrad_monthly,
+        poa_monthly=poa_monthly,
+        dc_monthly=dc_monthly,
     ), status.HTTP_200_OK
 
