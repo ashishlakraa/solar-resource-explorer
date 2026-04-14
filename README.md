@@ -57,6 +57,12 @@ The above diagram shows the high-level architecture with all functional componen
 
 4. External API dependency: All resource data and calculation are being loaded from external APIs.
 
+5. Duplicate address handling: This is tricky to handle as "College Avenue Student Center" or "College Avenue Student Center, Rutgers" or "97 Hamilton St, New Brunswick, NJ 08901" all resolves to same approximate geocode location. However their names are different. This part has been skipped in the current implementation.
+
+
+### Handling Invalid Addresses
+This is implemented by leveraging the external geocoding service. The external API gives an empty body response when an address cannot be resolved (invalid or non-existent). The application backend checks if response is empty and returns an error message to the user on the screen. The application proceeds to geocode all other valid addresses but blocks geocoding of the invalid address.
+
 
 ## Tech Stack
 
