@@ -123,6 +123,7 @@ This is implemented by leveraging the external geocoding service. The external A
     python manage.py runserver
     ```
     Both server and UI will be accessible from http://127.0.0.1:8000/
+    Swagger API Documentation can be viewed from http://127.0.0.1:8000/api/docs
 
 
 ## Project Structure
